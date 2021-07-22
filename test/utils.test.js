@@ -49,13 +49,13 @@ test.group('objectSearch', (test) => {
     t.deepEqual(actual, [ 'one' ]);
   });
 
-  test('match first instance of `two`', (t) => {
+  test('match first instance of `two` when an object is provided', (t) => {
     const actual = objectSearch(obj, /^.*two$/);
     t.is(actual.length, 1);
     t.deepEqual(actual, [ 'one.two' ]);
   });
 
-  test('match first instance of `two`', (t) => {
+  test('match first instance of `two` when an array is provided and the regex is word based', (t) => {
     const arr = [ obj, obj ];
     const actual = objectSearch(arr, /^.*two$/);
     t.is(actual.length, 2);
@@ -64,7 +64,7 @@ test.group('objectSearch', (test) => {
     t.deepEqual(_.get(arr, actual[0]), { three: 'woohoo' });
   });
 
-  test('match first instance of `two`', (t) => {
+  test('match first instance of `two` when an array is provided and the regex is number based', (t) => {
     const arr = [ obj, obj ];
     const actual = objectSearch(arr, /^[0-9]$/);
     t.is(actual.length, 2);
@@ -348,26 +348,26 @@ test.serial.group('parsers', (test) => {
   /* eslint-enable */
 
   tests.cson = `
-    _id: "airport_56"
+    _id: 'airport_56'
     airport_id: 56
-    doc_type: "airport"
-    airport_ident: "AYGA"
-    airport_type: "medium_airport"
-    airport_name: "Goroka"
+    doc_type: 'airport'
+    airport_ident: 'AYGA'
+    airport_type: 'medium_airport'
+    airport_name: 'Goroka'
     geo:
       latitude: -6.081689835
       longitude: 145.3919983
     elevation: 5282
-    iso_continent: "OC"
-    iso_country: "PG"
-    iso_region: "PG-EHG"
-    municipality: "Goroka"
-    airport_icao: "AYGA"
-    airport_iata: "GKA"
-    airport_gps_code: "AYGA"
+    iso_continent: 'OC'
+    iso_country: 'PG'
+    iso_region: 'PG-EHG'
+    municipality: 'Goroka'
+    airport_icao: 'AYGA'
+    airport_iata: 'GKA'
+    airport_gps_code: 'AYGA'
     timezone_offset: 10
-    dst: "U"
-    timezone: "Pacific/Port_Moresby"
+    dst: 'U'
+    timezone: 'Pacific/Port_Moresby'
   `;
 
   tests.csv = `

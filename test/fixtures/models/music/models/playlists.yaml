@@ -22,7 +22,7 @@ properties:
     type: string
     description: Unique identifier representing a specific playlist
     data:
-      build: "faker.random.uuid();"
+      build: "faker.datatype.uuid();"
   created:
     type: string
     description: The date the track was created

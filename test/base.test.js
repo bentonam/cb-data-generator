@@ -8,9 +8,8 @@ const test = ava.group('base:');
 
 test('without args', (t) => {
   const base = new Base();
-  t.deepEqual(base, {
+  const expectedBase = JSON.stringify({
     // inherited from events-async
-    domain: null,
     _events: {},
     _eventsCount: 0,
     _maxListeners: 50,
@@ -32,14 +31,14 @@ test('without args', (t) => {
     },
     spinners: {},
   });
+  t.deepEqual(JSON.stringify(base), expectedBase);
 });
 
 
 test('with args', (t) => {
   const base = new Base({ log: false });
-  t.deepEqual(base, {
+  const expectedBase = JSON.stringify({
     // inherited from events-async
-    domain: null,
     _events: {},
     _eventsCount: 0,
     _maxListeners: 50,
@@ -61,6 +60,8 @@ test('with args', (t) => {
     },
     spinners: {},
   });
+
+  t.deepEqual(JSON.stringify(base), expectedBase);
 });
 
 test('when options.verbose is true, it forces options.log to also be true', (t) => {

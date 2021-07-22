@@ -7,7 +7,7 @@ data:
     globals.index = 0;
     this.data.count = inputs.countries.length;
   pre_build: |
-    globals.index = faker.random.number({ min: 0, max: inputs.countries.length - 1 });
+    globals.index = faker.datatype.number({ min: 0, max: inputs.countries.length - 1 });
 properties:
   _id:
     type: string
@@ -18,7 +18,7 @@ properties:
     type: integer
     description: The countries GDP
     data:
-      build: "faker.random.number({ min: 1000, max: 75000 })"
+      build: "faker.datatype.number({ min: 1000, max: 75000 })"
   country_code:
     type: string
     description: The 2 letter ISO country code
@@ -46,4 +46,4 @@ properties:
     type: integer
     description: The countries population
     data:
-      build: "faker.random.number()"
+      build: "faker.datatype.number()"

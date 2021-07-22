@@ -85,9 +85,11 @@ export default class Output extends Base {
   ///# @description
   ///# This is used to save data to any place that was passed in the constructor
   ///# @arg {array, object} documents - The data that you want to be saved
+  ///# @arg {object} options - Options needed by the output such as scope or collection
   ///# @returns {array, object, string} - This is determined by the output type that's passed and the format that's used.
   ///# @async
-  async output(documents) {
+  // eslint-disable-next-line max-statements
+  async output(documents, outputOptions = {}) {
     let count = 0;
     if (!documents) {
       return this.log('error', 'You must pass in documents to the output');
@@ -122,7 +124,7 @@ export default class Output extends Base {
       // hack to get around the console outputting before the spinner
       if (output === 'console') {
         spinner.start();
-        const result = await this.outputter.output(null, parsed);
+        const result = await this.outputter.output(null, parsed, outputOptions);
         spinner.text = `Outputting ${name} to ${output}`;
         spinner.stop();
         console.log(result);
@@ -144,7 +146,7 @@ export default class Output extends Base {
       perfy.start(label);
       const key = document.__key || document.__name || (document[0] || {}).__name || ''; // eslint-disable-line no-underscore-dangle
       // use the outputter's output function to output the data
-      const result = await this.outputter.output(key, await parser(document, spacing));
+      const result = await this.outputter.output(key, await parser(document, spacing), outputOptions);
       update(count++);
       times.push(perfy.end(label).milliseconds);
       return result;
@@ -371,7 +373,7 @@ export const validate = {
     if (!is.number(option)) {
       throw new Error('The highWaterMark option must be a number');
     }
-  },
+  }
 };
 
 

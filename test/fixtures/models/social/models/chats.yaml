@@ -3,7 +3,7 @@ type: object
 key: _id
 data:
   pre_run: |
-    this.data.count = documents.Users.length * faker.random.number({ min: 2, max: 4 });
+    this.data.count = documents.Users.length * faker.datatype.number({ min: 2, max: 4 });
   dependencies:
     - users.yaml
 properties:

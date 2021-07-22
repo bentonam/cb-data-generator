@@ -69,7 +69,7 @@ properties:
           addresses.push({
             type: faker.random.arrayElement([ 'Home', 'Work', 'Other' ]),
             address_1: `${faker.address.streetAddress()} ${faker.address.streetSuffix()}`,
-            address_2: faker.random.boolean() ? faker.address.secondaryAddress() : null,
+            address_2: faker.datatype.boolean() ? faker.address.secondaryAddress() : null,
             locality: faker.address.city(),
             region: faker.address.stateAbbr(),
             postal_code: faker.address.zipCode(),

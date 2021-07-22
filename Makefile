@@ -5,7 +5,10 @@ SHELL := /bin/bash
 args = $(filter-out $@, $(MAKECMDGOALS))
 .PHONY: all install clean deep-clean reinstall setup build compile build-source-maps compile-source-maps docs docs-server docs-build docs-compile watch lint test coverage test-coverage code-coverage report-coverage report-code-coverage ci prepatch patch minor major publish release
 
-all: build test
+all:
+	make build
+	make test
+	make lint
 
 install:
 	npm install
@@ -17,7 +20,7 @@ clean:
 # remove all files that are ignored by git
 deep-clean:
 	make clean
-	rm -rf node_modules/ dist/ .nyc_output/ npm-debug.log yarn-error.log
+	rm -rf node_modules/ dist/ .nyc_output/ npm-debug.log yarn-error.log package-lock.json yarn.lock
 
 # reinstall the node_modules and start with a fresh node build
 reinstall setup:
@@ -27,13 +30,13 @@ reinstall setup:
 # build the source files
 build compile:
 	make clean
-	babel app --out-dir dist $(args)
+	./node_modules/.bin/babel app --out-dir dist $(args)
 
 # makes it easier to build files with source maps without errors
 # from other make commands
 build-source-maps compile-source-maps:
 	make clean
-	babel app --out-dir dist --source-maps $(args)
+	./node_modules/.bin/babel app --out-dir dist --source-maps $(args)
 
 # start the server for the documentation
 docs docs-server:
@@ -50,23 +53,23 @@ watch:
 
 # lint test files
 lint:
-	command -v eslint >/dev/null 2>&1 && eslint 'app' 'test' || ./node_modules/lint-rules/node_modules/.bin/eslint 'app' 'test';
+	command -v ./node_modules/.bin/eslint >/dev/null 2>&1 && ./node_modules/.bin/eslint 'app' 'test' || ./node_modules/lint-rules/node_modules/.bin/eslint 'app' 'test';
 
 # run unit tests
 test:
-	ava $(args)
+	./node_modules/.bin/ava $(args)
 
 # run coverage for the tests
 coverage test-coverage code-coverage:
 	# if there's no instance source maps files then build the files with source maps
 	@[ -f ./dist/index.js.map ] || (echo "building files with source maps" && make build-source-maps)
-	NODE_ENV="test" nyc --silent -- ava --verbose --no-cache
+	NODE_ENV="test" ./node_modules/.bin/nyc ./node_modules/.bin/ava --verbose --no-cache
 
 
 # These commands only run the report of the code coverage
 report-coverage report-code-coverage:
 	@if [ -d ./.nyc_output ]; then \
-	 	NODE_ENV="test" nyc report; \
+	 	NODE_ENV="test" ./node_modules/.bin/nyc report; \
 	else \
 		make test-coverage report-coverage; \
 	fi
@@ -74,7 +77,7 @@ report-coverage report-code-coverage:
 # posts code coverage to coveralls
 post-coverage:
 	@if [ -d ./.nyc_output ]; then \
-		nyc report --reporter=text-lcov | coveralls; \
+		./node_modules/.bin/nyc report --reporter=text-lcov | coveralls; \
 	else \
 		make test-coverage post-coverage; \
 	fi
@@ -85,9 +88,9 @@ ci:
 	# if the tests fail then it will exit with an error
 	make coverage || exit 1
 	# show the coverage report
-	nyc report
+	./node_modules/.bin/nyc report
 	# check check-coverage and if it fails then exit
-	nyc check-coverage --statements 95 --functions 95 --lines 95 || exit 1
+	./node_modules/.bin/nyc check-coverage --statements 95 --functions 95 --lines 95 || exit 1
 
 publish release:
 	make reinstall

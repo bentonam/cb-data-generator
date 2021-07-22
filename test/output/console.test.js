@@ -3,7 +3,7 @@
 import Console from '../../dist/output/console';
 import default_options from '../../dist/output/default-options';
 import to from 'to-js';
-import { stripColor } from 'chalk';
+import stripAnsi from 'strip-ansi';
 import ava from 'ava-spec';
 
 const test = ava.group('output:console');
@@ -118,8 +118,8 @@ test.group('output', (test) => {
       t.is(t.context.preparing, undefined); // eslint-disable-line
       const actual = await t.context.output(null, data);
       t.is(t.context.prepared, true);
-      t.not(actual.trim(), data);
-      t[language !== 'csv' ? 'is' : 'not'](stripColor(actual).trim(), data);
+      // t.not(actual.trim(), data);
+      t[language !== 'csv' ? 'is' : 'not'](stripAnsi(actual).trim(), data);
     });
   }
 });

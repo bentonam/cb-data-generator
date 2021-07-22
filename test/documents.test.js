@@ -10,10 +10,12 @@ import {
 const Model = require('../dist/models.js').default;
 import { join as p } from 'path';
 import ava from 'ava-spec';
+import { Chance } from 'chance';
 import to from 'to-js';
-import is from 'joi';
+import Joi from 'joi';
 import _ from 'lodash';
 import fs from 'fs-extra-promisify';
+
 const test = ava.group('documents');
 const documents_root = p(__dirname, 'fixtures', 'models');
 /* istanbul ignore next */
@@ -30,6 +32,7 @@ const models = utils.models({
 
 
 let babel_config;
+const chance = new Chance();
 
 test.before(async () => {
   babel_config = await fs.readJson(p(__dirname, '..', '.babelrc'));
@@ -97,13 +100,13 @@ test.group('build', (test) => {
     t.deepEqual(doc.globals, {});
     t.deepEqual(doc.documents, {});
     const actual = await doc.build(model);
-    const schema = is.array()
-      .items(is.object({
-        test: is.string().regex(/woohoo/),
+    const schema = Joi.array()
+      .items(Joi.object({
+        test: Joi.string().regex(/woohoo/),
       }))
       .length(1);
-    is.assert(actual, schema);
-    is.assert(doc.documents, is.object({ build_test: schema }));
+    Joi.assert(actual, schema);
+    Joi.assert(doc.documents, Joi.object({ build_test: schema }));
     t.deepEqual(doc.globals, { woohoo: 'woohoo' });
   });
 
@@ -154,7 +157,7 @@ test.group('build', (test) => {
       if (to.type(title) === 'object') {
         title = to.keys(title)[0];
       }
-      test(`is ${title}`, async (t) => {
+      test(`is ${title} - ${chance.integer()}`, async (t) => {
         const doc = t.context.document;
         const obj = to.clone(model);
         if (actual != null) {
@@ -251,7 +254,7 @@ test.group('build', (test) => {
     }
 
     test('phones array lengths are the same', async (t) => {
-      const count = t.context.document.faker.random.number({ min: 10, max: 200 });
+      const count = t.context.document.faker.datatype.number({ min: 10, max: 200 });
       t.plan(count * 2);
       for (var i = 0; i < count; i++) {
         const model = getModel();
@@ -283,7 +286,7 @@ test.group('build', (test) => {
     test('the content is exactly the same everytime', async (t) => {
       const model = getModel();
       let actual = [];
-      const count = t.context.document.faker.random.number({ min: 10, max: 200 });
+      const count = t.context.document.faker.datatype.number({ min: 10, max: 200 });
       t.plan(count - 1);
       for (var i = 0; i < count; i++) {
         t.context.document.documents = {};
@@ -298,7 +301,7 @@ test.group('build', (test) => {
     });
 
     test('the two items returned are always the same', async (t) => {
-      const count = t.context.document.faker.random.number({ min: 10, max: 200 });
+      const count = t.context.document.faker.datatype.number({ min: 10, max: 200 });
       const model = getModel();
       model.data.count = 1;
       t.plan(count);
@@ -306,8 +309,8 @@ test.group('build', (test) => {
         t.context.document.documents = {};
         const actual = await t.context.document.build(model);
         t.deepEqual(actual[0].phones, [
-          { type: 'Mobile', phone_number: '505.771.2870', extension: null },
-          { type: 'Mobile', phone_number: '275-728-6040', extension: null }
+          { type: 'Mobile', phone_number: '605.771.2870', extension: null },
+          { type: 'Mobile', phone_number: '475-728-6040', extension: null }
         ]);
       }
     });
@@ -341,7 +344,8 @@ test.group('runData', (test) => {
       }
     };
     const tester = () => t.context.document.runData(Foo, 'context');
-    t.throws(tester, /Foo failed, Cannot read property 'woohoo' of undefined/);
+    const error = t.throws(tester);
+    t.is(error.message, 'Foo failed, Cannot read property \'woohoo\' of undefined');
   });
 });
 
@@ -433,10 +437,10 @@ test.group('buildObject', (test) => {
     const doc = t.context.document.initializeDocument(model, paths);
     const actual = t.context.document.buildObject(model, to.clone(doc), paths, 1);
 
-    const schema = is.object({
-      phone: is.object({
-        type: is.string(),
-        phone_number: is.string().regex(/\(333\) 333 \- 3333/),
+    const schema = Joi.object({
+      phone: Joi.object({
+        type: Joi.string(),
+        phone_number: Joi.string().regex(/\(333\) 333 \- 3333/),
       })
     });
 
@@ -762,11 +766,12 @@ test.group('buildValue', (test) => {
         }
       }), []);
 
-      is.assert(actual, is.array()
-        .items(is.object({
-          first_name: is.string().regex(/[A-Z][a-zA-Z\s]+/),
-          gender: [ is.string().regex(/M|F/), is.allow(null) ],
-          age: is.number().min(1).max(17),
+      t.truthy(_.isArray(actual));
+      Joi.assert(actual, Joi.array()
+        .items(Joi.object({
+          age: Joi.number().min(1).max(17),
+          first_name: Joi.string().regex(/[A-Z][a-zA-Z\s]+/),
+          gender: [ Joi.string().regex(/M|F/), Joi.allow(null) ]
         }))
         .length(5));
     });
@@ -874,18 +879,18 @@ test.group('postProcess', (test) => {
     let doc = t.context.document.initializeDocument(model, paths);
     doc = t.context.document.buildObject(model, doc, paths, 1);
     const actual = t.context.document.postProcess(model, to.clone(doc), paths);
-    const schema = is.object({
-      nochanges: is.string().lowercase(),
-      changes: is.string().uppercase(),
-      emails: is.array()
-        .items(is.string().regex(/[A-Z]+\@example\.com/))
+    const schema = Joi.object({
+      nochanges: Joi.string().lowercase(),
+      changes: Joi.string().uppercase(),
+      emails: Joi.array()
+        .items(Joi.string().regex(/[A-Z]+\@example\.com/))
         .min(1)
         .max(4),
-      phones: is.array()
-        .items(is.object({
-          type: is.string(),
-          extension: is.string().regex(/10/),
-          phone_number: is.string().regex(/\(333\) 333 \- 3333/),
+      phones: Joi.array()
+        .items(Joi.object({
+          type: Joi.string(),
+          extension: Joi.string().regex(/10/),
+          phone_number: Joi.string().regex(/\(333\) 333 \- 3333/),
         }))
         .min(1)
         .max(4),
@@ -893,7 +898,7 @@ test.group('postProcess', (test) => {
 
     t.truthy(/[a-z]+/.test(doc.changes));
     t.truthy(/[A-Z]+/.test(actual.changes));
-    is.assert(actual, schema);
+    Joi.assert(actual, schema);
     t.notDeepEqual(doc, actual);
   });
 
@@ -1001,7 +1006,7 @@ test.group('transformValueToType', (test) => {
     } else if (to.type(value) === 'array') {
       value = `[ '${value.join('\', \'')}' ]`;
     }
-    test(`type is \`${actual[0]}\` and value is \`${value}\``, (t) => {
+    test(`type is \`${actual[0]}\` and value is \`${value}\` - ${chance.integer()}`, (t) => {
       if ('array,object'.includes(to.type(expected))) {
         t.deepEqual(transformValueToType(...actual), expected);
       } else {

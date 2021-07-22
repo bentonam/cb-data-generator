@@ -19,7 +19,7 @@ properties:
     type: string
     description: Unique identifier representing a specific product
     data:
-      build: "faker.random.uuid();"
+      build: "faker.datatype.uuid();"
   price:
     type: double
     description: The product price

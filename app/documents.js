@@ -255,7 +255,7 @@ export class Document extends Base {
     }
     key = key || `${model.name}_${index}`;
 
-    // @todo update this to use `new Map`, or `new WeakMap`;
+    // TODO: update this to use `new Map`, or `new WeakMap`;
     Object.defineProperty(doc, '__key', { value: key });
     Object.defineProperty(doc, '__name', { value: model.name });
 

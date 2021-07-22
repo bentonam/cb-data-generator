@@ -1,11 +1,13 @@
 {
   "presets": [
-    "latest",
-    "stage-0"
+    "@babel/preset-env"
   ],
   "plugins": [
-    "transform-runtime",
-    "external-helpers",
-    "array-includes"
+    [
+      "@babel/plugin-transform-runtime",
+      {
+        "corejs": 3
+      }
+    ]
   ]
 }

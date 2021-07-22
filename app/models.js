@@ -4,9 +4,9 @@ import path from 'path';
 import DependencyResolver from 'dependency-resolver';
 import * as utils from './utils';
 import Base from './base';
-import { set, get, find } from 'lodash';
+import { set, get, find, sortBy } from 'lodash';
 import to, { is } from 'to-js';
-import { transform } from 'babel-core';
+import { transform } from '@babel/core';
 import globby from 'globby';
 import findRoot from 'find-root';
 
@@ -408,7 +408,7 @@ export function parseModelDefaults(model) {
 
 
 /// @name parseModelCount
-/// @description Determins the total number of documents to run
+/// @description Determines the total number of documents to run
 /// @arg {object} model - The model to update
 /// @arg {undefined, null, number} count - The count to override the model settings
 export function parseModelCount(model, count) {
@@ -448,7 +448,6 @@ export function parseModelSeed(model, seed) {
   }
 }
 
-
 /// @name resolveDependenciesOrder
 /// @description Resolves the dependency order that file models need to run in.
 /// @arg {array} models [[]] - The models to prioritize
@@ -461,8 +460,10 @@ export function resolveDependenciesOrder(models = []) {
   const resolver = new DependencyResolver();
   const order = {};
 
-  // mode models that don't have dependencies up to be first
-  models = models.sort((a, b) => !b.data.dependencies.length && !!a.data.dependencies.length ? 1 : 0);
+  function sortByFunction(item) {
+    return item.data.dependencies.length;
+  }
+  models = sortBy(models, [ sortByFunction ]);
 
   for (let [ i, { file, data } ] of to.entries(models)) {
     order[file] = i;

@@ -1,98 +1,98 @@
 [
   {
     id: 302672
-    code: "AD"
-    name: "Andorra"
-    continent: "EU"
+    code: 'AD'
+    name: 'Andorra'
+    continent: 'EU'
   }
   {
     id: 302618
-    code: "AE"
-    name: "United Arab Emirates"
-    continent: "AS"
+    code: 'AE'
+    name: 'United Arab Emirates'
+    continent: 'AS'
   }
   {
     id: 302619
-    code: "AF"
-    name: "Afghanistan"
-    continent: "AS"
+    code: 'AF'
+    name: 'Afghanistan'
+    continent: 'AS'
   }
   {
     id: 302722
-    code: "AG"
-    name: "Antigua and Barbuda"
-    continent: "NA"
+    code: 'AG'
+    name: 'Antigua and Barbuda'
+    continent: 'NA'
   }
   {
     id: 302723
-    code: "AI"
-    name: "Anguilla"
-    continent: "NA"
+    code: 'AI'
+    name: 'Anguilla'
+    continent: 'NA'
   }
   {
     id: 302673
-    code: "AL"
-    name: "Albania"
-    continent: "EU"
+    code: 'AL'
+    name: 'Albania'
+    continent: 'EU'
   }
   {
     id: 302620
-    code: "AM"
-    name: "Armenia"
-    continent: "AS"
+    code: 'AM'
+    name: 'Armenia'
+    continent: 'AS'
   }
   {
     id: 302556
-    code: "AO"
-    name: "Angola"
-    continent: "AF"
+    code: 'AO'
+    name: 'Angola'
+    continent: 'AF'
   }
   {
     id: 302615
-    code: "AQ"
-    name: "Antarctica"
-    continent: "AN"
+    code: 'AQ'
+    name: 'Antarctica'
+    continent: 'AN'
   }
   {
     id: 302789
-    code: "AR"
-    name: "Argentina"
-    continent: "SA"
+    code: 'AR'
+    name: 'Argentina'
+    continent: 'SA'
   }
   {
     id: 302763
-    code: "AS"
-    name: "American Samoa"
-    continent: "OC"
+    code: 'AS'
+    name: 'American Samoa'
+    continent: 'OC'
   }
   {
     id: 302674
-    code: "AT"
-    name: "Austria"
-    continent: "EU"
+    code: 'AT'
+    name: 'Austria'
+    continent: 'EU'
   }
   {
     id: 302764
-    code: "AU"
-    name: "Australia"
-    continent: "OC"
+    code: 'AU'
+    name: 'Australia'
+    continent: 'OC'
   }
   {
     id: 302725
-    code: "AW"
-    name: "Aruba"
-    continent: "NA"
+    code: 'AW'
+    name: 'Aruba'
+    continent: 'NA'
   }
   {
     id: 302621
-    code: "AZ"
-    name: "Azerbaijan"
-    continent: "AS"
+    code: 'AZ'
+    name: 'Azerbaijan'
+    continent: 'AS'
   }
   {
     id: 302675
-    code: "BA"
-    name: "Bosnia and Herzegovina"
-    continent: "EU"
+    code: 'BA'
+    name: 'Bosnia and Herzegovina'
+    continent: 'EU'
   }
 ]

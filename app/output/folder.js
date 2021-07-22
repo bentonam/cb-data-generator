@@ -54,7 +54,7 @@ export default class Folder extends Base {
 
   ///# @name output
   ///# @description
-  ///# This is used to output the data that's passed to it
+  ///# This is used to output the data that is passed to it
   ///# @arg {string} id - The id to use for this data
   ///# @arg {object, array, string} data - The data that you want to be saved
   ///# @async
@@ -66,6 +66,12 @@ export default class Folder extends Base {
       await this.preparing;
     }
 
-    return fs.writeFile(path.join(this.output_options.output, `${id}.${this.output_options.format}`), data);
+    // Some files may contain an id or key property that contains backslashes so we must
+    // be sure to create the directory structure and file before trying to write to the file
+    // otherwise the writeFile function will fail with a `no such file or directory` error.
+    const fileToWriteTo = path.join(this.output_options.output, `${id}.${this.output_options.format}`);
+    await fs.ensureFile(fileToWriteTo);
+
+    return fs.writeFile(fileToWriteTo, data);
   }
 }

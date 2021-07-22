@@ -155,7 +155,7 @@ properties:
             short_description: random.short_description,
             image: random.image,
             price: random.sale_price || random.price,
-            qty: faker.random.number({ min: 1, max: 5 }),
+            qty: faker.datatype.number({ min: 1, max: 5 }),
           };
           product.sub_total = product.qty * product.price;
           items.push(product);

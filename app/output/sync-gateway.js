@@ -104,7 +104,7 @@ export default class SyncGateway extends Base {
 
     const { server, bucket } = this.output_options;
 
-    const options = {
+    const config = {
       url: `${server}/${bucket}/${encodeURIComponent(id)}`,
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -116,10 +116,10 @@ export default class SyncGateway extends Base {
       const jar = req.jar();
       const cookie = req.cookie(`${this.session.name}=${this.session.id}`);
       jar.setCookie(cookie, server);
-      options.jar = jar;
+      config.jar = jar;
     }
 
-    const body = to.object((await request(options))[1]);
+    const body = to.object((await request(config))[1]);
 
     if (body.error) {
       if (body.reason === 'Document exists') {

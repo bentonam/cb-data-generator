@@ -24,7 +24,7 @@ properties:
     type: string
     description: Unique identifier representing a specific review
     data:
-      build: "faker.random.uuid();"
+      build: "faker.datatype.uuid();"
   airport_id:
     type: integer
     description: The airport_id the review is for

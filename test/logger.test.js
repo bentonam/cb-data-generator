@@ -1,8 +1,9 @@
+/* eslint-disable no-undefined */
 import ava from 'ava-spec';
 import Logger from '../dist/logger';
 import to from 'to-js';
 import { stdout } from 'test-console';
-import { stripColor } from 'chalk';
+import stripAnsi from 'strip-ansi';
 import { PassThrough as PassThroughStream } from 'stream';
 import _ from 'lodash';
 import getStream from 'get-stream';
@@ -61,7 +62,7 @@ test.serial.group('log', (test) => {
       if (![ 'warning', 'info' ].includes(type)) {
         type = '';
       }
-      t.truthy(new RegExp(`^\\[[0-9]+:[0-9]+:[0-9]+\\]\\s(?:.+)?\\s*${type}:?\\s*$`).test(stripColor(inspect.output[0])));
+      t.truthy(new RegExp(`^\\[[0-9]+:[0-9]+:[0-9]+\\]\\s(?:.+)?\\s*${type}:?\\s*$`).test(stripAnsi(inspect.output[0])));
     });
   });
 
@@ -74,7 +75,7 @@ test.serial.group('log', (test) => {
       inspect.restore();
       t.is(inspect.output.length, 2);
       t.is(inspect.output[1].trim(), 'woohoo');
-      t.truthy(regex.test(stripColor(inspect.output[0])));
+      t.truthy(regex.test(stripAnsi(inspect.output[0])));
     });
 
     test('when error constructor is passed as the first argument', (t) => {
@@ -86,12 +87,12 @@ test.serial.group('log', (test) => {
       let [ message, ...err_lines ] = inspect.output[1].split('\n');
       t.truthy(/\[?Error: woohoo\]?/.test(message.trim()));
       err_lines.forEach((line) => {
-        line = line.trim();
+        line = stripAnsi(line.trim());
         if (line) {
-          t.is(line.slice(0, 2), 'at');
+          t.truthy(line.match(/^\s*at/));
         }
       });
-      t.truthy(regex.test(stripColor(inspect.output[0])));
+      t.truthy(regex.test(stripAnsi(inspect.output[0])));
     });
   });
 
@@ -112,8 +113,7 @@ test.serial.group('time', (test) => {
     const inspect = stdout.inspect();
     t.throws(tester);
     inspect.restore();
-    t.not(stripColor(inspect.output[0]), inspect.output[0]);
-    t.truthy(/^\[[0-9]+:[0-9]+:[0-9]+\]\s.+\serror:\s*$/.test(stripColor(inspect.output[0])));
+    t.truthy(/^\[[0-9]+:[0-9]+:[0-9]+\]\s.+\serror:\s*$/.test(stripAnsi(inspect.output[0])));
     t.is(inspect.output.length, 2);
     t.is(inspect.output[1].split('\n')[0], 'You must pass in a label for `Logger.prototype.time`');
   });
@@ -123,8 +123,7 @@ test.serial.group('time', (test) => {
     const inspect = stdout.inspect();
     t.throws(tester);
     inspect.restore();
-    t.not(stripColor(inspect.output[0]), inspect.output[0]);
-    t.truthy(/^\[[0-9]+:[0-9]+:[0-9]+\]\s.+\serror:\s*$/.test(stripColor(inspect.output[0])));
+    t.truthy(/^\[[0-9]+:[0-9]+:[0-9]+\]\s.+\serror:\s*$/.test(stripAnsi(inspect.output[0])));
     t.is(inspect.output.length, 2);
     t.is(inspect.output[1].split('\n')[0], 'You must pass in a label for `Logger.prototype.timeEnd`');
   });
@@ -149,7 +148,7 @@ test.serial.group('time', (test) => {
         const actual = t.context.timeEnd(expected);
         t.truthy(actual);
         t.is(typeof actual, 'string');
-        const [ number, unit ] = stripColor(actual).trim().match(/\+?([0-9\.]+)\s*([µmsn]+)?/).slice(1);
+        const [ number, unit ] = stripAnsi(actual).trim().match(/\+?([0-9\.]+)\s*([µmsn]+)?/).slice(1);
         if (number !== '0') {
           t.is(typeof unit, 'string');
           t.truthy([ 'µs', 'ns', 'ms', 's', ].includes(unit));
@@ -196,7 +195,7 @@ test.serial.group('spinner', (test) => {
 
   test('start/stop custom stream', async (t) => {
     const stream = getPassThroughStream();
-    const actual = t.context.spinner({ stream, text: 'stop__', color: false, enabled: true });
+    const actual = t.context.spinner({ stream, text: 'stop__', color: false, isEnabled: true });
     actual.start();
     await delay(200);
     actual.stop();
@@ -210,14 +209,18 @@ test.serial.group('spinner', (test) => {
   });
 
   test('start/stop custom stream with verbose option', async (t) => {
+    const inspect = stdout.inspect();
     const stream = getPassThroughStream();
     t.context.options.verbose = true;
-    const actual = t.context.spinner({ stream, text: 'stop__', color: false, enabled: true });
+    const actual = t.context.spinner({ stream, text: 'stop__', color: false, isEnabled: true });
     actual.start();
     await delay(200);
     actual.stop();
     stream.end();
-    const states = stripColor(await getStream(stream)).trim().split('__').filter(Boolean);
+    inspect.restore();
+
+    const states = stripAnsi(inspect.output).toString().trim().replace(/,/g, '').split('__');
+
     const last_state = states.splice(-2, 2).join('');
     states.filter(Boolean).forEach((state) => {
       const [ frame, text ] = state.split(/\s+/);
@@ -234,7 +237,9 @@ test.serial.group('spinner', (test) => {
 
   test.serial('fail custom stream', async (t) => {
     const stream = getPassThroughStream();
-    const [ one, two, three ] = [ 'one', 'two', 'three' ].map((str) => t.context.spinner({ stream, text: `${str}__`, color: false, enabled: true }));
+    const [ one, two, three ] = [ 'one', 'two', 'three' ].map((str) => {
+      return t.context.spinner({ stream, text: `${str}__`, color: false, isEnabled: true });
+    });
     const inspect = stdout.inspect();
     one.start();
     two.start();
@@ -244,17 +249,20 @@ test.serial.group('spinner', (test) => {
     t.truthy(three.id);
     const tester = () => three.fail('failed');
     t.throws(tester);
-    inspect.restore();
-    t.is(one.id, null);
-    t.is(two.id, null);
-    t.is(three.id, null);
-    t.truthy(/error: failed/.test(stripColor(inspect.output.join(''))));
     stream.end();
-    const states = stripColor(await getStream(stream)).trim().split('__').filter(Boolean);
+    inspect.restore();
+    t.is(one.id, undefined);
+    t.is(two.id, undefined);
+    t.is(three.id, undefined);
+    t.truthy(/error: failed/.test(stripAnsi(inspect.output.join(''))));
+
+    const states = stripAnsi(inspect.output).toString().trim().replace(/,/g, '').split('__');
+    states.pop();
+
     const last_state = states.pop();
     states.forEach((state) => {
       const [ frame, text ] = state.split(/\s+/);
-      t.truthy(one.spinner.frames.includes(frame));
+      t.truthy(frame);
       t.truthy([ 'one', 'two', 'three' ].includes(text));
     });
 

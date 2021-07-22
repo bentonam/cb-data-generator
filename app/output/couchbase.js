@@ -1,8 +1,7 @@
 import { extend } from 'lodash';
 import default_options from './default-options';
 import Base from '../base';
-import couchbase from 'couchbase-promises';
-
+import couchbase from 'couchbase';
 
 /// @name Couchbase
 /// @page api
@@ -15,16 +14,22 @@ export default class Couchbase extends Base {
     super(options);
     this.output_options = extend({}, default_options, output_options);
 
-    this.cluster = new couchbase.Cluster(this.output_options.server);
-
     const { username, password } = this.output_options;
-    if (username || password) {
-      this.cluster.authenticate({
-        username: username || '',
-        password: password || ''
-      });
+    let couchbaseOptions = {};
+
+    if (username && password) {
+      couchbaseOptions = {
+        username,
+        password
+      };
     }
 
+    this.cluster = new couchbase.Cluster(
+      this.output_options.server,
+      couchbaseOptions
+    );
+
+    this.collection = null;
     this.prepared = false;
   }
 
@@ -37,9 +42,9 @@ export default class Couchbase extends Base {
   ///# wait for it to be done before it starts saving data.
   ///# @returns {promise} - The setup function that was called
   ///# @async
-  prepare() {
+  async prepare() {
     this.preparing = true;
-    this.preparing = this.setup();
+    this.preparing = await this.setup();
     return this.preparing;
   }
 
@@ -52,22 +57,22 @@ export default class Couchbase extends Base {
       return this.prepare();
     }
 
-    const { server, bucket, timeout } = this.output_options;
+    const { server, bucket } = this.output_options;
+
     return new Promise((resolve, reject) => {
-      this.bucket = this.cluster.openBucket(bucket, (err) => {
-        /* istanbul ignore if : to hard to test since this is a third party function */
-        if (err) return reject(err);
+      try {
+        this.bucket = this.cluster.bucket(bucket);
+      } catch (err) {
+        console.log(err);
 
-        this.log('verbose', `Connection to '${bucket}' bucket at '${server}' was successful`);
+        reject(err);
+      }
 
-        if (timeout) {
-          this.bucket.operationTimeout = timeout;
-        }
+      this.log('verbose', `Connection to '${bucket}' bucket at '${server}' was successful`);
 
-        this.prepared = true;
-        this.bucket.connected = true;
-        resolve();
-      });
+      this.prepared = true;
+      this.bucket.connected = true;
+      resolve();
     });
   }
 
@@ -76,8 +81,9 @@ export default class Couchbase extends Base {
   ///# This is used to output the data that's passed to it
   ///# @arg {string} id - The id to use for this data
   ///# @arg {object, array, string} data - The data that you want to be saved
+  ///# @arg {object} options - Options from the original YAML file definition to be used by the output logic
   ///# @async
-  async output(id, data) {
+  async output(id, data, options = {}) {
     if (this.prepared !== true) {
       if (this.preparing == null) {
         this.prepare();
@@ -85,17 +91,27 @@ export default class Couchbase extends Base {
       await this.preparing;
     }
 
+    let collection = this.bucket.defaultCollection();
+
+    // Check if the user configured a collection and/or a scope. If so,
+    // use them, otherwise use the default scope and default collection.
+    if (options.scope && options.collection) {
+      collection = this.bucket.scope(options.scope).collection(options.collection);
+    } else if (options.collection) {
+      collection = this.bucket.collection(options.collection);
+    }
+
     // upserts a document into couchbase
-    return this.bucket.upsertAsync(id, data);
+    return collection.upsert(id, data, { timeout: 5000 });
   }
 
   ///# @name finalize
   ///# @description
-  ///# This disconnect from couchbase if it's connected
+  ///# This disconnect from couchbase if it is connected
   ///# @async
   async finalize() {
-    if ((this.bucket || {}).connected) {
-      await this.bucket.disconnect();
+    if (this.bucket && this.bucket.connected) {
+      await this.cluster.close();
       this.bucket.connected = false;
     }
   }

@@ -2,12 +2,12 @@ import to from 'to-js';
 import chalk from 'chalk';
 import symbols from 'log-symbols';
 import perfy from 'perfy';
-symbols.warn = symbols.warning;
-symbols.ok = symbols.okay = symbols.success;
 import ora from 'ora';
 import formatSeconds from 'format-seconds';
 import Emitter from 'events-async';
 
+symbols.warn = symbols.warning;
+symbols.ok = symbols.okay = symbols.success;
 
 /// @name Logger
 /// @description
@@ -157,6 +157,10 @@ export default class Logger extends Emitter {
     if (this.spinners[options.text]) {
       return this.spinners[options.text];
     }
+
+    options.isEnabled = this.options.spinners || options.spinners || true;
+    options.stream = process.stdout;
+
     const spinner = this.spinners[options.text] = ora(options);
     spinner.title = options.text;
     const self = this;
@@ -166,7 +170,7 @@ export default class Logger extends Emitter {
     // overwrite it to support timing
     spinner.start = function start() {
       if (
-        !this.enabled ||
+        !this.isEnabled ||
         !self.options.spinners
       ) {
         return this;
@@ -179,7 +183,7 @@ export default class Logger extends Emitter {
     };
     spinner.stop = function stop() {
       if (
-        !this.enabled ||
+        !this.isEnabled ||
         this.id == null ||
         !self.options.spinners
       ) {
@@ -196,7 +200,9 @@ export default class Logger extends Emitter {
     };
 
     spinner.fail = function fail(err) {
-      spinner.stopAndPersist(symbols.error);
+      spinner.stopAndPersist({
+        symbol: symbols.error
+      });
       // stop the rest of spinners
       to.each(self.spinners, ({ value }) => {
         value.originalStop();
@@ -207,14 +213,15 @@ export default class Logger extends Emitter {
 
     spinner.stopAndPersist = function stopAndPersist(symbol) {
       if (
-        !this.enabled ||
+        !this.isEnabled ||
         this.id == null ||
         !self.options.spinners
       ) {
         return this;
       }
       this.originalStop();
-      this.stream.write(`${symbol || ' '} ${this.text}\n`);
+
+      this.stream.write(`${symbol.symbol || ' '} ${this.text}\n`);
       return this;
     };
     return spinner;

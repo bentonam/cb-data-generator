@@ -1,11 +1,12 @@
 import path from 'path';
+
 import to from 'to-js';
+
 import Logger from './logger';
 
 /// @name Base
 /// @page api
-/// @description
-/// This holds the base functions that each of the classes in the application will exten
+/// @description This holds the base functions that each of the classes in the application will extend
 export default class Base extends Logger {
   /// @name constructor
   /// @arg {object} options - Global options for the different classes
@@ -33,11 +34,11 @@ export default class Base extends Logger {
     }
   }
 
-  ///# @name resolvePaths
-  ///# @description
-  ///# This is ued to parsed paths that are passed to the different functions
-  ///# @arg {string, array} paths - The paths to normalize
-  ///# @arg {string} root [this.options.root] - This is the base that will resolve other paths
+  /// @name resolvePaths
+  /// @description This is used to parse paths that are passed to the different functions
+  /// @arg {string, array} paths - The paths to normalize
+  /// @arg {string} root [this.options.root] - This is the base that will resolve other paths
+  /// @returns {array} An empty array or an array containing paths
   resolvePaths(paths, root = this.options.root) {
     if (!paths) {
       return [];

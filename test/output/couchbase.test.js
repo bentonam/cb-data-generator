@@ -1,53 +1,76 @@
-/* eslint-disable id-length, no-shadow, no-undefined */
+/* eslint-disable no-undefined */
 
 import Couchbase from '../../dist/output/couchbase';
-import couchbase from 'couchbase-promises';
 import default_options from '../../dist/output/default-options';
 import to from 'to-js';
 import ava from 'ava-spec';
+import sinon from 'sinon';
 
 const test = ava.group('output:couchbase');
+const username = 'test';
+const password = 'test';
 
 test.beforeEach((t) => {
-  t.context = new Couchbase();
-  // this replaces the original cluster with the mock cluster that doesn't require
-  // an actual server to be running, this way it's easy to test the functionality
-  // of our functions and not couchbases functions.
-  t.context.cluster = new couchbase.Mock.Cluster(t.context.output_options.server);
+  t.context = new Couchbase({}, { username, password });
+  t.context.cluster = sinon.mock(Couchbase.prototype);
 });
 
+test.afterEach(() => {
+  sinon.resetBehavior();
+  sinon.restore();
+});
 
 test('without args', (t) => {
+  default_options.username = username;
+  default_options.password = password;
   t.deepEqual(t.context.output_options, default_options);
   t.is(t.context.prepared, false);
   t.is(typeof t.context.prepare, 'function');
   t.is(typeof t.context.output, 'function');
-  t.is(t.context.cluster.constructor.name, 'MockCluster');
+  t.is(t.context.cluster.constructor.name, 'Object');
 });
 
 test('prepare', async (t) => {
+  t.context.cluster.bucket = sinon.fake.returns({
+    defaultCollection: sinon.stub().callsFake(() => {
+      return {
+        upsert: sinon.stub().callsFake(() => {
+          return Promise.resolve({
+            cas: 23423497,
+            token: 'asldfj923249-asdf2bh234-2kchadr',
+          });
+        }),
+      };
+    })
+  });
+
   t.is(t.context.prepared, false);
   t.is(t.context.preparing, undefined);
+
   const preparing = t.context.prepare();
-  t.is(typeof t.context.preparing.then, 'function');
-  t.is(t.context.prepared, false);
+
   await preparing;
+
   t.is(t.context.prepared, true);
   t.is(to.type(t.context.bucket), 'object');
   t.is(t.context.bucket.connected, true);
 });
 
 test.group('setup', (test) => {
-  test(async (t) => {
+  test('returns an exception when a bucket is not found', async (t) => {
+    t.context.cluster.bucket = null;
+
     t.is(t.context.prepared, false);
     t.is(t.context.preparing, undefined);
-    const preparing = t.context.setup();
-    t.is(typeof t.context.preparing.then, 'function');
-    t.is(t.context.prepared, false);
-    t.falsy(await preparing);
-    t.is(t.context.prepared, true);
-    t.is(to.type(t.context.bucket), 'object');
-    t.is(t.context.bucket.connected, true);
+
+    try {
+      await t.context.setup();
+      // If we get here then fail the test because we are
+      // expecting a failure with this test
+      t.fail();
+    } catch (e) {
+      t.pass();
+    }
   });
 });
 
@@ -123,28 +146,72 @@ test.group('output', (test) => {
 
   for (let language of to.keys(languages)) {
     const data = languages[language];
-    test(language, async (t) => {
+    test.serial(language, async (t) => {
+      t.context.cluster.bucket = sinon.fake.returns({
+        defaultCollection: sinon.stub().callsFake(() => {
+          return {
+            get: sinon.stub().callsFake(() => {
+              // GetResult: https://docs.couchbase.com/sdk-api/couchbase-node-client/global.html#GetResult
+              return Promise.resolve({
+                content: data,
+                cas: 12345487634,
+              });
+            }),
+            upsert: sinon.stub().callsFake(() => {
+              return Promise.resolve({
+                cas: 23423497,
+                token: 'asldfj923249-asdf2bh234-2kchadr',
+              });
+            }),
+          };
+        })
+      });
+
       t.context.output_options.bucket = `output-${language}`;
       const id = `1234567890-${language}`;
       t.context.output_options.format = language;
-      await t.context.output(id, data);
-      const document = await t.context.bucket.getAsync(id);
-      t.not(document, null);
-      t.deepEqual(document.value, data);
+      const result = await t.context.output(id, data);
+      t.is(result.cas, 23423497);
+      t.is(result.token, 'asldfj923249-asdf2bh234-2kchadr');
+      const document = await t.context.bucket.defaultCollection().get(id);
+      t.not(document, undefined);
+      t.deepEqual(document.content, data);
     });
   }
 
   test('prepare has started but isn\'t complete', async (t) => {
     const language = 'json';
     const data = languages[language];
+
+    t.context.cluster.bucket = sinon.fake.returns({
+      defaultCollection: sinon.stub().callsFake(() => {
+        return {
+          get: sinon.stub().callsFake(() => {
+            // GetResult: https://docs.couchbase.com/sdk-api/couchbase-node-client/global.html#GetResult
+            return Promise.resolve({
+              content: data,
+              cas: 12345487634,
+            });
+          }),
+          upsert: sinon.stub().callsFake(() => {
+            return Promise.resolve({
+              cas: 23423497,
+              token: 'asldfj923249-asdf2bh234-2kchadr',
+            });
+          }),
+        };
+      })
+    });
+
+
     t.context.output_options.bucket = `output-${language}`;
     const id = `1234567890-${language}`;
     t.context.output_options.format = language;
     t.context.prepare();
     await t.context.output(id, data);
-    const document = await t.context.bucket.getAsync(id);
-    t.not(document, null);
-    t.deepEqual(document.value, data);
+    const document = await t.context.bucket.defaultCollection().get(id);
+    t.not(document, undefined);
+    t.deepEqual(document.content, data);
   });
 });
 
@@ -157,16 +224,28 @@ test.group('finalize', (test) => {
   });
 
   test('disconnected', async (t) => {
+    t.context.cluster.close = sinon.stub().callsFake(() => {
+      return '';
+    });
+    t.context.cluster.bucket = sinon.fake.returns({
+      connected: sinon.stub().onFirstCall().resolves(true).onSecondCall().resolves(false),
+      defaultCollection: sinon.stub().callsFake(() => {
+        return {};
+      })
+    });
+
     t.context.output_options.bucket = 'finalize';
+
     await t.context.prepare();
+
     t.is(to.type(t.context.bucket), 'object');
     t.is(t.context.prepared, true);
-    t.is(typeof t.context.preparing.then, 'function');
     t.is(t.context.bucket.connected, true);
+
     await t.context.finalize();
+
     t.is(to.type(t.context.bucket), 'object');
     t.is(t.context.prepared, true);
-    t.is(typeof t.context.preparing.then, 'function');
     t.is(t.context.bucket.connected, false);
   });
 });

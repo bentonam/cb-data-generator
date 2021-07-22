@@ -11,14 +11,15 @@ Utility that generates fake data in `json`, `yaml`, `yml`, `cson`, or `csv` form
 ![Example of how it works](https://raw.githubusercontent.com/bentonam/fakeit/master/assets/example.gif)
 
 Generated data can be output in the following formats and destinations:
-  - `json`
-  - `yaml`
-  - `yml`
-  - `cson`
-  - `csv`
-  - Zip Archive of `json`, `yaml`, `yml`, `cson` or `csv` files
-  - Couchbase Server
-  - Couchbase Sync Gateway Server
+
+- `json`
+- `yaml`
+- `yml`
+- `cson`
+- `csv`
+- Zip Archive of `json`, `yaml`, `yml`, `cson` or `csv` files
+- Couchbase Server
+- Couchbase Sync Gateway Server
 
 ## Install
 
@@ -46,6 +47,7 @@ npm install fakeit --global
 
     -h, --help           output usage information
     -V, --version        output the version number
+
     --root <directory>   Defines the root directory from which paths are resolve from (process.cwd())
     --babel <glob>       The location to the babel config (+(.babelrc|package.json))
     -c, --count <n>      Overrides the number of documents to generate specified by the model. Defaults to model defined count
@@ -59,6 +61,72 @@ npm install fakeit --global
     -x, --seed <seed>    The global seed to use for repeatable data
 ```
 
+### Console Specific CLI Options
+
+```bash
+  Options:
+
+    -h, --no-highlight     This turns off the cli-table when a csv format
+```
+
+#### FakeIt Console usage example
+
+```bash
+fakeit console ../test/fixtures/models/simple/models
+```
+
+### Couchbase Specific CLI Options
+
+```bash
+  Options:
+
+    -s, --server            The server IP address
+    -b, --bucket            The name of the bucket to insert data to
+    -u, --username          The RBAC username to use (optional pre-5.0)
+    -p, --password          The RBAC password for the account (optional)
+    -t, --timeout           Timeout for the servers
+    -r, --use-streams       Whether or not to use node streams. Used for high output documents and can only be used when there are no dependencies (experimental)
+    -w, --high-water-mark   The number of objects to process through the stream at a time (experimental)
+```
+
+#### FakeIt Couchbase usage example
+
+```bash
+fakeit couchbase -s 127.0.0.1 -b "sample" -u "Administrator" -p "password" ../test/fixtures/models/simple/models
+```
+
+### Sync Gateway Specific CLI Options
+
+```bash
+  Options:
+
+    -s, --server            The server IP address
+    -b, --bucket            The name of the bucket to insert data to
+    -u, --username          The RBAC username to use (optional pre-5.0)
+    -p, --password          The RBAC password for the account (optional)
+    -t, --timeout           Timeout for the servers
+```
+
+#### FakeIt Couchbase Sync Gateway usage example
+
+```bash
+fakeit couchbase -s 127.0.0.1 -b "sample" -u "Administrator" -p "password" ../test/fixtures/models/simple/models
+```
+
+### Directory Specific CLI Options
+
+```bash
+  Options:
+
+    -a, --archive           If an archive file is passed, then the data will be output as a zip file
+```
+
+#### FakeIt Directory usage example
+
+```bash
+fakeit directory 'output' '../test/fixtures/models/simple/models'
+```
+
 ## Models
 
 All data is generated from one or more [YAML](http://yaml.org/) files.  Models are defined similarly to how models are defined in [Swagger](http://swagger.io/), with the addition of a few more properties that are used for data generation:
@@ -66,12 +134,26 @@ All data is generated from one or more [YAML](http://yaml.org/) files.  Models a
 At the root of a model the following keys are used, if it's not required then it's optional
 
 #### `name` *(required)*
+
 The name of the model
 
 #### `type`
+
 The data type of the model to be generated. This needs to be set top level, as well as a per property/items basis. It determines the starting data type, and how the result of the build loop will be converted once complete
 
 **Note:** If type isn't set it defaults to `'null'`.
+
+#### `scope`
+
+The scope to use within Couchbase.
+
+**NOTE:** This only applies to Couchbase Server 7.0+ **If you are not using Couchbase 7.0+ and define this property, it will cause an error.** Additionally, make sure the scope exists in Couchbase before you set this property.
+
+#### `collection`
+
+The collection to use within Couchbase.
+
+**NOTE:** This only applies to Couchbase Server 7.0+ **If you are not using Couchbase 7.0+ and define this property, it will cause an error.** Additionally, make sure the collection exists in Couchbase before you set this property
 
 ###### Available types
 
@@ -92,7 +174,7 @@ name: Types example
 # typically object or array
 type: object
 key:
-  build: faker.random.uuid()
+  build: faker.datatype.uuid()
 properties:
   foo:
     # can be set on properties of an object
@@ -114,30 +196,28 @@ properties:
         build: faker.random.word()
 ```
 
-
 #### `data`
 
 This is the main data object that is uses the same properties in several different situations.
 
-  - `min`: The minimum number of documents to generate
-  - `max`: The maximum number of documents to generate
-  - `count`: A fixed number of documents to generate. If this is defined then `min` and `max` are ignored. If `min`, `max`, and `count` aren't defined `count` defaults to 1
-  - `pre_run`: A function that runs before the documents are generated
-  - `pre_build`: A function to be run *before each document* is generated
-  - `value`: Returns a value (can't be a function).
-  - `build`: The function to be run when the property is built. Only runs if `value` isn't defined
-  - `fake:` A template string to be used by Faker i.e. `"{{name.firstName}}"`. This will only run if `build`, and `value` aren't defined.
-  - `post_build`: A function to be run *after each document* is generated
-  - `post_run`: A function that runs after all the documents are generated for that model
+- `min`: The minimum number of documents to generate
+- `max`: The maximum number of documents to generate
+- `count`: A fixed number of documents to generate. If this is defined then `min` and `max` are ignored. If `min`, `max`, and `count` aren't defined `count` defaults to 1
+- `pre_run`: A function that runs before the documents are generated
+- `pre_build`: A function to be run *before each document* is generated
+- `value`: Returns a value (can't be a function).
+- `build`: The function to be run when the property is built. Only runs if `value` isn't defined
+- `fake:` A template string to be used by Faker i.e. `"{{name.firstName}}"`. This will only run if `build`, and `value` aren't defined.
+- `post_build`: A function to be run *after each document* is generated
+- `post_run`: A function that runs after all the documents are generated for that model
 
-The following keys can only be defined in the top level data object
-  - `dependencies`: An array of dependencies of file paths to the dependencies of the current model. They are relative to the model, and or they can be absolute paths.
-     Don't worry about the order, we will resolve all dependencies automagically #yourwelcome
-  - `inputs`: A object/string of input(s) that's required for this model to run. If it's a string the file name is used as the key.
-     The key is what you reference when you want to get data (aka `this.inputs[key]`). The value is the file path to the inputs location.
-     It can be relative to the model or an absolute path.
+The following keys can only be defined in the top level data object:
 
-
+- `dependencies`: An array of dependencies of file paths to the dependencies of the current model. They are relative to the model, and or they can be absolute paths.
+    Don't worry about the order, we will resolve all dependencies automagically #yourwelcome
+- `inputs`: A object/string of input(s) that's required for this model to run. If it's a string the file name is used as the key.
+    The key is what you reference when you want to get data (aka `this.inputs[key]`). The value is the file path to the inputs location.
+    It can be relative to the model or an absolute path.
 
 #### `key` *(required)*
 
@@ -188,7 +268,6 @@ properties:
       build: ++globals.user_counter
 ```
 
-
 #### `seed`
 
 If a seed is defined it will ensure that the documents created repeatable results. If you have a model with a data range of 2-10 a random number between 2 and 10 documents will be created no matter what the seed is. Let's say that 4 documents are generated the first time you run the model, each of those documents will be completely different than the next (as expected). Later you come back and you generate the data again this time it might generate 6 documents. The first 4 documents generated the second time will be exactly the same as the first time you generated the data. The seed can be number or string.
@@ -199,19 +278,19 @@ This only works if you use `faker` and `chance` to generate your random fake dat
 
 `faker.date` functions will not produce the same fake data each time.
 
-
 ##### Functions
 
 For any function defined above be sure to use `|` for multi line functions and **NOT** `>`. To see an in depth explanation see this [issue](https://github.com/bentonam/fakeit/issues/84#issuecomment-266905423)
 
 Each of these functions is passed the following variables that can be used at the time of it's execution:
-  - `documents` - An object containing a key for each model whose value is an array of each document that has been generated
-  - `globals` - An object containing any global variables that may have been set by any of the run or build functions
-  - `inputs` - An object containing a key for each input file used whose value is the deserialized version of the files data
-  - `faker` - A reference to [FakerJS](http://marak.github.io/faker.js/)
-  - `chance` - A reference to [ChanceJS](http://chancejs.com/)
-  - `document_index` - This is a number that represents the currently generated document's position in the run order
-  - `require` - This is the node `require` function, it allows you to require your own packages. Should require and set them in the pre_run functions for better performance.
+
+- `documents` - An object containing a key for each model whose value is an array of each document that has been generated
+- `globals` - An object containing any global variables that may have been set by any of the run or build functions
+- `inputs` - An object containing a key for each input file used whose value is the deserialized version of the files data
+- `faker` - A reference to [FakerJS](http://marak.github.io/faker.js/)
+- `chance` - A reference to [ChanceJS](http://chancejs.com/)
+- `document_index` - This is a number that represents the currently generated document's position in the run order
+- `require` - This is the node `require` function, it allows you to require your own packages. Should require and set them in the pre_run functions for better performance.
 
 For the `pre_run`, and `post_run` the `this` context refers to the current model.
 For the `pre_build`, `build`, and `post_build` the `this` context refers to the object currently being generated.
@@ -222,6 +301,8 @@ If you have a nested object being created in an array or something, `this` will 
 ```yaml
 name: Users
 type: object
+scope: test
+collection: users
 key:
   data:
     build: `user_${this.user_id}`
@@ -234,7 +315,7 @@ properties:
   user_id:
     description: The users id
     data:
-      build: faker.random.uuid()
+      build: faker.datatype.uuid()
   name:
     description: The users first name
     data:
@@ -293,19 +374,19 @@ This is used to define out the properties for an object.
 
 Each key inside of the `properties` will be apart of the generated object. Each of the keys use the following properties to build the values.
 
-  - `type`: The data type of the property.  Values can be: `string`, `object `, `structure`, `number `, `integer `, `double `, `long `, `float`, `array`, `boolean `, `bool`
-  - `description`: A description of the property. This is just extra notes for the developer and doesn't affect the data.
-  - `data`: The same data options as defined above
+- `type`: The data type of the property.  Values can be: `string`, `object`, `structure`, `number`, `integer`, `double`, `long`, `float`, `array`, `boolean`, `bool`
+- `description`: A description of the property. This is just extra notes for the developer and doesn't affect the data.
+- `data`: The same data options as defined above
 
 ```yaml
 name: test
 key:
-  build: faker.random.uuid()
+  build: faker.datatype.uuid()
 type: object
 properties:
   id:
     data:
-      build: faker.random.uuid()
+      build: faker.datatype.uuid()
   title:
     type: string
     description: The main title to use
@@ -361,7 +442,7 @@ It uses the same structure as `properties` does but it will return an array of v
 name: Array example
 key:
   data:
-    build: faker.random.uuid()
+    build: faker.datatype.uuid()
 type: object
 properties:
   keywords:
@@ -426,6 +507,8 @@ It can be beneficial to define definitions that can be referenced one or more ti
 name: Contacts
 type: object
 key: contact_id
+scope: development
+collection: contacts
 data:
   min: 1
   max: 4
@@ -557,6 +640,13 @@ data:
 # etc...
 ```
 
+**IMPORTANT:** When creating the input data in CSV format, the first column will not be used. You must make the first row in the CSV file, column header values. The column header names can be used in the yaml files to reference the correct data field from the CSV. The first column should have a name of id, the remaining columns can be whatever you want them to be. The id column will not be used so just make it an arbitrary number. If you need/want to specify an id value in the CSV file to be used in the yaml file just make the second column be the actual id value used in the yaml file. Here's an example of how your CSV file should be setup:
+
+```csv
+id,countryId,code,name,continent
+1,country::gb,GB,United Kingdom,EU
+2,country::us,US,United States,NA
+```
 
 ## JS API
 
@@ -571,7 +661,6 @@ fakeit.generate('glob/to/models/**/*.yaml')
     console.log(data)
   })
 ```
-
 
 ### Fakeit Options
 
@@ -640,13 +729,46 @@ fakeit.generate(models, {
 
 To see more examples of some of the things you can do take a look at the [test cases](https://github.com/bentonam/fakeit/tree/master/test/fixtures/models) that are in this repo
 
-
 ### Changelog
 
-  - Model Dependencies are now defined in the model it's self by the file path to the model that the current one depends on. It doesn't matter what order they're because they will be resolve automagically.
-  - Model Inputs are now defined in the model it's self by the file path to the inputs location that the current model depends on. It can be a string or an object.
-  - Babel +6 support now exists. We don't install any presets or plugins for you but if `.babelrc` or `babelConfig` exists in the `package.json` of your project then all the functions are transpiled.
-  - Better error handling has been added so you know what went wrong and where it happened.
-  - JS support has also been added so you are no longer required to use the command line to create fake data.
-  - Added support for seeds to allow repeatable data.
-  - Added a progress indicator to show how many documents have been created
+#### 2.0.10
+
+- Set `stream` argument to ORA to be `process.stdout`
+- Fix option to ORA as it was `enabled` but should have been `isEnabled`
+
+#### 2.0.9
+
+- Revert `discardStdin` option of `ora` to be true
+- Utilize the CLI option `-S` to set if `isEnabled` should be true or false when passed to a new instance of ORA.
+
+#### 2.0.8
+
+- Update dependencies
+- Set `discardStdin` option of `ora` to be false
+
+#### 2.0.5
+
+- Removed Couchbase parameters `scopeName` and `collectionName` in favor of defining these values in each model
+- Fixed an error with the **directory/folder** output method that caused models with an id or key containing a backslash to not be output due to the directory not existing.
+
+#### 2.0.0
+
+- Updated all library dependencies to the latest versions
+- Migrated from Babel 6 to Babel 7
+- Updated Couchbase logic to take `scopeName` and `collectionName` parameters to support these new features in Couchbase Server 7+
+- Update commander to the latest version which required code to be refactored due to changes in the Commander library
+- Updated AVA to the latest version which required tests to be refactored due to changes in the AVA library
+- Updated existing tests to fix a few test issues
+- Specify that Node v10 or less should be utilized
+- Update readme documentation
+- Fix typo's throughout code documentation
+
+#### 1.4.0 & prior
+
+- Model Dependencies are now defined in the model it's self by the file path to the model that the current one depends on. It doesn't matter what order they're because they will be resolve automagically.
+- Model Inputs are now defined in the model it's self by the file path to the inputs location that the current model depends on. It can be a string or an object.
+- Babel +6 support now exists. We don't install any presets or plugins for you but if `.babelrc` or `babelConfig` exists in the `package.json` of your project then all the functions are transpiled.
+- Better error handling has been added so you know what went wrong and where it happened.
+- JS support has also been added so you are no longer required to use the command line to create fake data.
+- Added support for seeds to allow repeatable data.
+- Added a progress indicator to show how many documents have been created

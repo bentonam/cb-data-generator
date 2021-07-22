@@ -4,7 +4,7 @@ import globby from 'globby';
 import fs from 'fs-extra-promisify';
 import { stdout } from 'test-console';
 import path, { join as p } from 'path';
-import { stripColor } from 'chalk';
+import stripAnsi from 'strip-ansi';
 import ava from 'ava-spec';
 import AdmZip from 'adm-zip';
 import Fakeit from '../dist/index.js';
@@ -73,7 +73,7 @@ generate.serial.group('console', models(async (t, model) => {
   const inspect = stdout.inspect();
   await t.context.fakeit.generate(model, t.context.defaults);
   inspect.restore();
-  const actual = to.object(stripColor(inspect.output[0].trim()))[0];
+  const actual = to.object(stripAnsi(inspect.output[0].trim()))[0];
 
   return actual;
 }));
@@ -126,15 +126,20 @@ generate.group('zip', models(async (t, model) => {
   t.context.defaults.output = root;
   t.context.defaults.archive = 'archive.zip';
   await t.context.fakeit.generate(model, t.context.defaults);
+
   const files = await globby(p(root, '**', '*'));
+
   t.is(files.length, 1);
   t.is(path.extname(files[0]), '.zip');
   const zip = new AdmZip(files[0]);
+
   t.is(zip.getEntries().length, 1);
   const entry_file = zip.getEntries()[0].name;
+
   t.is(path.extname(entry_file), '.json');
+
   // read the entry_file from the zip file and convert it to an object from a json string
-  return to.object(await zip.readAsText(entry_file));
+  return to.object(zip.readAsText(entry_file));
 }));
 
 
